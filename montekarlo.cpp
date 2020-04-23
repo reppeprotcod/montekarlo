@@ -87,6 +87,7 @@ bool intersect(Point p1, Point p2, Point p3, Point p4)
 	else */return false;
 }
 
+// check if point inside polygon
 bool is_in_poly(int n, Point *poly, Point p)
 {
 	bool c = false;

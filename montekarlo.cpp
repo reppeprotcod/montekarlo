@@ -1,174 +1,337 @@
-#include<iostream>
-#include<ctime>
+#define _USE_MATH_DEFINES
+
+#include <algorithm>
+#include <iostream>
+#include <vector>
+#include <cstdio>
+#include <cmath>
+#include <ctime>
+
 using namespace std;
 
-struct Point {
-	double x, y;
+struct vertex {
+	double x;
+	double y;
+};
+
+struct point {
+	int x;
+	int y;
+};
+
+typedef vector<vertex> polygon;
+
+#define VB_SIZE 40
+#define VB_EDGE '*'
+#define VB_FILL '@'
+#define VB_VOID ' '
+
+typedef char pixel;
+typedef pixel** vbuffer;
+
+enum class rasterState {
+	SEARCH,
+	FILL,
+	CLEAN,
+	END
 };
 
 double random(double min, double max)
 {
 	double x = (double)rand() / RAND_MAX;
-	x *= max - min;
-	x += min;
-	return x;
+	return x * (max - min) + min;
 }
 
-bool is_in(double x, double y, double x1, double y1, double x2, double y2)
+pixel getPixel(vbuffer& buffer, int x, int y)
 {
-	double bx1 = x1, bx2 = x2;
-	if (x2 < x1) {
-		bx1 = x2;
-		bx2 = x1;
-	}
-
-	double by1 = y1, by2 = y2;
-	if (y2 < y1) {
-		by1 = y2;
-		by2 = y1;
-	}
-
-	if (x >= bx1 && x <= bx2 && y >= by1 && y <= by2) {
-		return true;
-	}
-	return false;
+	if (x >= 0 && x < VB_SIZE && y >= 0 && y < VB_SIZE)
+		return buffer[y][x];
+	else return 0;
 }
 
-bool intersect(Point p1, Point p2, Point p3, Point p4)
+void setPixel(vbuffer& buffer, int x, int y, pixel value)
 {
-	/*double k1, k2, b1, b2;
-
-	if (p1.x >= p2.x) {
-		double x = p2.x;
-		p2.x = p1.x;
-		p1.x = x;
-		double y = p2.y;
-		p2.y = p1.y;
-		p1.y = y;
-	}
-
-	if (p3.x >= p4.x) {
-		double x = p3.x;
-		p4.x = p3.x;
-		p3.x = x;
-		double y = p4.y;
-		p4.y = p3.y;
-		p3.y = y;
-	}
-
-	if (p1.x == p2.x && p3.y == p4.y) {
-		if (p1.x >= p3.x && p1.x <= p4.x &&
-			p3.y >= p2.y && p3.y <= p1.y) return true;
-		else return false;
-	}
-
-	if (p3.x == p4.x && p1.y == p2.y) {
-		if (p3.x >= p1.x && p3.x <= p2.x &&
-			p1.y >= p3.y && p1.y <= p4.y) return true;
-		else return false;
-	}
-
-	if (p1.y == p2.y) k1 = 0;
-	else k1 = (p2.y - p1.y) / (p2.x - p1.x);
-
-	if (p3.y == p4.y) k2 = 0;
-	else k2 = (p4.y - p3.y) / (p4.x - p3.x);
-
-	if (k1 == k2) return false;
-
-	b1 = p1.y - k1 * p1.x;
-	b2 = p3.y - k2 * p3.x;
-
-	double x = (b2 - b1) / (k1 - k2);
-	double y = k1 * x + b1;
-
-	if (x >= p1.x && x <= p2.x && x >= p3.x && x <= p4.x)
-		return true;
-	else */return false;
+	if (x >= 0 && x < VB_SIZE && y >= 0 && y < VB_SIZE)
+		buffer[y][x] = value;
 }
 
-// check if point inside polygon
-bool is_in_poly(int n, Point *poly, Point p)
+void initVideoBuffer(vbuffer& buffer)
+{
+	buffer = new pixel * [VB_SIZE];
+	for (int i = 0; i < VB_SIZE; i++) {
+		buffer[i] = new pixel[VB_SIZE];
+		pixel value = (i == VB_SIZE - 1) ? '-' : VB_VOID;
+		memset(buffer[i], value, VB_SIZE * sizeof(pixel));
+		setPixel(buffer, 0, i, '|');
+	}
+	setPixel(buffer, 0, 0, '^');
+	setPixel(buffer, 0, VB_SIZE - 1, '+');
+	setPixel(buffer, VB_SIZE - 1, VB_SIZE - 1, '>');
+}
+
+void displayVideoBuffer(const vbuffer& buffer)
+{
+	for (int y = 0; y < VB_SIZE; y++) {
+		for (int x = 0; x < VB_SIZE; x++) {
+			putchar(buffer[y][x]);
+			if (x > 0 && x < VB_SIZE - 1)
+				putchar(buffer[y][x]);
+		}
+		if (y != VB_SIZE - 1) putchar('\n');
+	}
+}
+
+void drawLine(vbuffer& buffer, point a, point b, pixel value) {
+	int dx = abs(b.x - a.x);
+	int sx = a.x < b.x ? 1 : -1;
+	int dy = abs(b.y - a.y);
+	int sy = a.y < b.y ? 1 : -1;
+
+	int err = (dx > dy ? dx : -dy) / 2;
+	int e2 = 0;
+
+	for (;;) {
+		setPixel(buffer, a.x, a.y, value);
+		if (a.x == b.x && a.y == b.y) break;
+		e2 = err;
+		if (e2 > -dx) { err -= dy; a.x += sx; }
+		if (e2 < dy) { err += dx; a.y += sy; }
+	}
+}
+
+void rasterFill(vbuffer& buffer)
+{
+	rasterState state = rasterState::SEARCH;
+	for (int y = 0; y < VB_SIZE - 1; y++) {
+		for (int x = 0;;) {
+			if (state == rasterState::SEARCH) {
+				if (getPixel(buffer, x, y) == VB_EDGE &&
+					getPixel(buffer, x + 1, y) != VB_EDGE)
+					state = rasterState::FILL;
+				if (++x == VB_SIZE - 1) break;
+			}
+			else if (state == rasterState::FILL) {
+				if (getPixel(buffer, x, y) == VB_EDGE)
+					state = rasterState::END;
+				else setPixel(buffer, x, y, VB_FILL);
+				if (++x == VB_SIZE) state = rasterState::CLEAN;
+			}
+			else if (state == rasterState::CLEAN) {
+				if (getPixel(buffer, x, y) == VB_EDGE) break;
+				setPixel(buffer, x, y, VB_VOID);
+				x--;
+			}
+			else if (state == rasterState::END) break;
+		}
+		state = rasterState::SEARCH;
+	}
+}
+
+void rasterizePolygon(vbuffer& buffer, const polygon& poly)
+{
+	for (int i = 0, j = poly.size() - 1; i < poly.size(); j = i++) {
+		point a = { floor(poly[j].x), floor(VB_SIZE - poly[j].y) };
+		point b = { floor(poly[i].x), floor(VB_SIZE - poly[i].y) };
+		drawLine(buffer, a, b, VB_EDGE);
+	}
+	rasterFill(buffer);
+}
+
+void scalePolygon(polygon& poly, double factor)
+{
+	for_each(poly.begin(), poly.end(),
+		[factor](vertex& v) {
+			v.x *= factor;
+			v.y *= factor;
+		});
+}
+
+polygon randomPolygon(double maxCoord, int vertexNum)
+{
+	polygon poly;
+
+	double x0 = maxCoord / 2;
+	double y0 = maxCoord / 2;
+	double radius = x0;
+
+	double a0 = 0.75 * (2 * M_PI / vertexNum);
+	double a1 = 0.40 * (2 * M_PI / vertexNum);
+	double startAngle = random(-M_PI / 2, M_PI / 2);
+
+	int N = 0;
+	double angle = startAngle;
+	while (angle < M_PI * 2 + startAngle) {
+		poly.push_back({
+			x0 + radius * cos(angle),
+			y0 + radius * sin(angle)
+			});
+		angle += random(a0, a0 + a1);
+		if (++N == vertexNum) break;
+	}
+
+	return poly;
+}
+
+bool insidePolygon(const polygon& p, const vertex& v)
 {
 	bool c = false;
-	for (int i = 0, j = n - 1; i < n; j = i++) {
-		if ((((poly[i].y <= p.y) && (p.y < poly[j].y)) || ((poly[j].y <= p.y) && (p.y < poly[i].y))) &&
-			(((poly[j].y - poly[i].y) != 0) && (p.x > ((poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x))))
+	for (int i = 0, j = p.size() - 1; i < p.size(); j = i++) {
+		if ((((p[i].y <= v.y) && (v.y < p[j].y)) || ((p[j].y <= v.y) && (v.y < p[i].y))) &&
+			(((p[j].y - p[i].y) != 0) && (v.x > ((p[j].x - p[i].x) * (v.y - p[i].y) / (p[j].y - p[i].y) + p[i].x))))
 			c = !c;
 	}
 	return c;
 }
 
-
-bool is_in_circ(double x, double y, double cx, double cy, double r)
+double polygonArea(const polygon& poly, double maxCoord, int samplesNum)
 {
-	if ((cx - x) * (cx - x) + (cy - y) * (cy - y) < r * r) {
-		return true;
+	double totalArea = pow(maxCoord, 2);
+	int k = 0;
+
+	for (int i = 0; i < samplesNum; i++) {
+		vertex sample = { random(0, maxCoord), random(0, maxCoord) };
+		if (insidePolygon(poly, sample)) k++;
 	}
-	return false;
+
+	return (double)k / samplesNum * totalArea;
 }
 
-double plosh(int n, Point* poly)
+void rasterizeCircle(vbuffer& buffer, double radius)
 {
-	double bx1 = -100, by1 = -100, bx2 = 100, by2 = 100;
-	double s = (bx2 - bx1) * (by2 - by1);
-
-	int N = 1000000, k = 0;
-
-	for (int i = 0; i < N; i++) {
-		double x = random(bx1, bx2);
-		double y = random(by1, by2);
-		if (is_in_poly(n, poly, { x, y })) k++;
+	double center = VB_SIZE - radius;
+	point a1 = { 0, center };
+	point a2 = { 0, center };
+	for (int i = 1; i <= radius * 2; i++) {
+		double offset = sqrt(pow(radius, 2) - pow(i - radius, 2));
+		point b1 = { i, center + offset };
+		drawLine(buffer, a1, b1, VB_EDGE);
+		point b2 = { i, center - offset };
+		drawLine(buffer, a2, b2, VB_EDGE);
+		a1 = b1;
+		a2 = b2;
 	}
-	double s1 = (double)k / N * s;
-	return s1;
+	rasterFill(buffer);
 }
 
-double plosh_circ(double cx, double cy, double r)
+bool insideCircle(double radius, const vertex& v)
 {
-	double bx1 = -100, by1 = -100, bx2 = 100, by2 = 100;
-	double s = (bx2 - bx1) * (by2 - by1);
-	
-	int n = 1000000, k = 0;
+	return pow(v.x - radius, 2) + pow(v.y - radius, 2) < pow(radius, 2);
+}
 
-	for (int i = 0; i < n; i++) {
-		double x = random(bx1, bx2);
-		double y = random(by1, by2);
-		if (is_in_circ(x, y, cx, cy, r)) k++;
+double circleArea(double radius, int samplesNum)
+{
+	double totalArea = pow(radius * 2, 2);
+	int k = 0;
+
+	for (int i = 0; i < samplesNum; i++) {
+		vertex sample = { random(0, radius * 2), random(0, radius * 2) };
+		if (insideCircle(radius, sample)) k++;
 	}
-	double s1 = (double)k / n * s;
-	return s1;
+
+	return (double)k / samplesNum * totalArea;
+}
+
+void rasterizeFunction(vbuffer& buffer, double a, double b, double maxCoord)
+{
+	double scaleFactor = VB_SIZE / maxCoord;
+	for (int i = 1; i < VB_SIZE; i++) {
+		double coord = VB_SIZE - (a + b * sin(i / scaleFactor)) * scaleFactor;
+		point pa = { i, VB_SIZE - 2 };
+		point pb = { i, coord };
+		drawLine(buffer, pa, pb, VB_FILL);
+		setPixel(buffer, i, coord, VB_EDGE);
+	}
+}
+
+bool insideFunction(double a, double b, const vertex& v)
+{
+	return v.y < (a + b * sin(v.x));
+}
+
+double functionArea(double a, double b, double maxCoord, int samplesNum)
+{
+	double totalArea = pow(maxCoord, 2);
+	int k = 0;
+
+	for (int i = 0; i < samplesNum; i++) {
+		vertex sample = { random(0, maxCoord), random(0, maxCoord) };
+		if (insideFunction(a, b, sample)) k++;
+	}
+
+	return (double)k / samplesNum * totalArea;
 }
 
 int main()
 {
 	srand(time(0));
 
-	int n = 0;
-	printf("n:");
-	scanf_s("%d", &n);
-	Point* poly = new Point[n];
+	double max = 0;
+	int samples = 0;
+	int type = 0;
 
-	for (int i = 0; i < n; i++) {
-		printf("x:");
-		scanf_s("%lf", &poly[i].x);
-		printf("y:");
-		scanf_s("%lf", &poly[i].y);
+	printf("Enter shape (0 - polygon, 1 - circle, 2 - a+b*sin(x)): ");
+	cin >> type;
+	while (type < 0 || type > 2) {
+		printf("Enter valid number: ");
+		cin >> type;
 	}
-	
-	double s = plosh(n, poly);
-	printf("%f\n", s);
 
-	double cx = 0, cy = 0, r = 0;
-	printf("cx:");
-	scanf_s("%lf", &cx);
-	printf("cy:");
-	scanf_s("%lf", &cy);
-	printf("r:");
-	scanf_s("%lf", &r);
+	printf("Enter maximum coordinate (>=1): ");
+	cin >> max;
+	while (max < 1) {
+		printf("Enter valid number: ");
+		cin >> max;
+	}
 
-	s = plosh_circ(cx, cy, r);
-	printf("%f\n", s);
+	printf("Enter number of samples (>=1000): ");
+	cin >> samples;
+	while (samples < 1000) {
+		printf("Enter valid number: ");
+		cin >> samples;
+	}
 
-	return 0;
+	vbuffer buffer;
+	initVideoBuffer(buffer);
+
+	if (type == 0) {
+		int vertices = 0;
+		printf("Enter number of vertices (>=3): ");
+		cin >> vertices;
+		while (vertices < 3) {
+			printf("Enter valid number: ");
+			cin >> vertices;
+		}
+
+		polygon poly = randomPolygon(max, vertices);
+		double area = polygonArea(poly, max, samples);
+		printf("\nTotal area = %.3f\nPolygon area = %.3f\n\n", pow(max, 2), area);
+
+		double scaleFactor = (double)VB_SIZE / max;
+		scalePolygon(poly, scaleFactor);
+		rasterizePolygon(buffer, poly);
+	}
+	else if (type == 1) {
+		double area = circleArea(max / 2, samples);
+		printf("\nTotal area = %.3f\nCircle area = %.3f\n\n", pow(max, 2), area);
+		rasterizeCircle(buffer, (double)VB_SIZE / 2 - 1);
+	}
+	else if (type == 2) {
+		double a = 0;
+		double b = 0;
+
+		printf("Enter a: ");
+		cin >> a;
+		printf("Enter b: ");
+		cin >> b;
+
+		double area = functionArea(a, b, max, samples);
+		printf("\nTotal area = %.3f\nFunction area = %.3f\n\n", pow(max, 2), area);
+		rasterizeFunction(buffer, a, b, max);
+	}
+
+	printf("%.1f\n", max);
+	displayVideoBuffer(buffer);
+	printf(" %.1f\n", max);
+
+	system("pause");
 }

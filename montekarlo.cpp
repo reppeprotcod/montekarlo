@@ -60,8 +60,8 @@ void initVideoBuffer(vbuffer& buffer)
 	buffer = new pixel * [VB_SIZE];
 	for (int i = 0; i < VB_SIZE; i++) {
 		buffer[i] = new pixel[VB_SIZE];
-		pixel value = (i == VB_SIZE - 1) ? '-' : VB_VOID;
-		memset(buffer[i], value, VB_SIZE * sizeof(pixel));
+		pixel value = (i == VB_SIZE - 1) ? '-' : VB_VOID;// выбор символа для заполнения строки
+		memset(buffer[i], value, VB_SIZE * sizeof(pixel));//заполнения строки
 		setPixel(buffer, 0, i, '|');
 	}
 	setPixel(buffer, 0, 0, '^');
@@ -74,13 +74,14 @@ void displayVideoBuffer(const vbuffer& buffer)
 	for (int y = 0; y < VB_SIZE; y++) {
 		for (int x = 0; x < VB_SIZE; x++) {
 			putchar(buffer[y][x]);
-			if (x > 0 && x < VB_SIZE - 1)
-				putchar(buffer[y][x]);
+			if (x > 0 && x < VB_SIZE - 1)//дублирвоание символа для изображения в консоли,
+				putchar(buffer[y][x]);  // кроме первого и последнего столбца 
 		}
 		if (y != VB_SIZE - 1) putchar('\n');
 	}
 }
 
+//рисование линии по алгоритму Брезенхема
 void drawLine(vbuffer& buffer, point a, point b, pixel value) {
 	int dx = abs(b.x - a.x);
 	int sx = a.x < b.x ? 1 : -1;
@@ -99,26 +100,27 @@ void drawLine(vbuffer& buffer, point a, point b, pixel value) {
 	}
 }
 
+//заполнение фигуры
 void rasterFill(vbuffer& buffer)
 {
 	rasterState state = rasterState::SEARCH;
 	for (int y = 0; y < VB_SIZE - 1; y++) {
-		for (int x = 0;;) {
-			if (state == rasterState::SEARCH) {
+		for (int x = 0;;) {//заполнение производится построчно
+			if (state == rasterState::SEARCH) {//стадия поиска левой границы
 				if (getPixel(buffer, x, y) == VB_EDGE &&
 					getPixel(buffer, x + 1, y) != VB_EDGE)
-					state = rasterState::FILL;
+					state = rasterState::FILL;//переход на стадию заполнения
 				if (++x == VB_SIZE - 1) break;
 			}
-			else if (state == rasterState::FILL) {
+			else if (state == rasterState::FILL) {//стадия заполнения
 				if (getPixel(buffer, x, y) == VB_EDGE)
-					state = rasterState::END;
-				else setPixel(buffer, x, y, VB_FILL);
-				if (++x == VB_SIZE) state = rasterState::CLEAN;
+					state = rasterState::END;//завершение заполнения
+				else setPixel(buffer, x, y, VB_FILL);//заполнение
+				if (++x == VB_SIZE) state = rasterState::CLEAN;//переход на стадию очистки
 			}
 			else if (state == rasterState::CLEAN) {
 				if (getPixel(buffer, x, y) == VB_EDGE) break;
-				setPixel(buffer, x, y, VB_VOID);
+				setPixel(buffer, x, y, VB_VOID);//очистка
 				x--;
 			}
 			else if (state == rasterState::END) break;
@@ -129,6 +131,7 @@ void rasterFill(vbuffer& buffer)
 
 void rasterizePolygon(vbuffer& buffer, const polygon& poly)
 {
+	//отрисовка границ многоугольника
 	for (int i = 0, j = poly.size() - 1; i < poly.size(); j = i++) {
 		point a = { floor(poly[j].x), floor(VB_SIZE - poly[j].y) };
 		point b = { floor(poly[i].x), floor(VB_SIZE - poly[i].y) };
@@ -150,28 +153,30 @@ polygon randomPolygon(double maxCoord, int vertexNum)
 {
 	polygon poly;
 
+	//параметры окружности
 	double x0 = maxCoord / 2;
 	double y0 = maxCoord / 2;
 	double radius = x0;
 
-	double a0 = 0.75 * (2 * M_PI / vertexNum);
-	double a1 = 0.40 * (2 * M_PI / vertexNum);
-	double startAngle = random(-M_PI / 2, M_PI / 2);
+	double a0 = 0.75 * (2 * M_PI / vertexNum);//минимальное отклонение угла
+	double a1 = 1.15 * (2 * M_PI / vertexNum);//максимальное отклонение угла
+	double startAngle = random(-M_PI / 2, M_PI / 2);//начальный угол
 
-	int N = 0;
-	double angle = startAngle;
+	int N = 0;//количесвто построенных вершин
+	double angle = startAngle;//текущий угол
 	while (angle < M_PI * 2 + startAngle) {
-		poly.push_back({
+		poly.push_back({//вычисление координат вершины
 			x0 + radius * cos(angle),
 			y0 + radius * sin(angle)
 			});
-		angle += random(a0, a0 + a1);
+		angle += random(a0, a1);
 		if (++N == vertexNum) break;
 	}
 
 	return poly;
 }
 
+//быстрый алгоритм проверки принадлежности вершины многоугольнику
 bool insidePolygon(const polygon& p, const vertex& v)
 {
 	bool c = false;
@@ -186,10 +191,10 @@ bool insidePolygon(const polygon& p, const vertex& v)
 double polygonArea(const polygon& poly, double maxCoord, int samplesNum)
 {
 	double totalArea = pow(maxCoord, 2);
-	int k = 0;
+	int k = 0;//количесвто попаданий внутрь многоугольника
 
 	for (int i = 0; i < samplesNum; i++) {
-		vertex sample = { random(0, maxCoord), random(0, maxCoord) };
+		vertex sample = { random(0, maxCoord), random(0, maxCoord) };//случайная точка
 		if (insidePolygon(poly, sample)) k++;
 	}
 
@@ -199,13 +204,15 @@ double polygonArea(const polygon& poly, double maxCoord, int samplesNum)
 void rasterizeCircle(vbuffer& buffer, double radius)
 {
 	double center = VB_SIZE - radius;
+	//начальные точки линий границ окружности
 	point a1 = { 0, center };
 	point a2 = { 0, center };
 	for (int i = 1; i <= radius * 2; i++) {
 		double offset = sqrt(pow(radius, 2) - pow(i - radius, 2));
+		//конечные точки линий границ окружности
 		point b1 = { i, center + offset };
-		drawLine(buffer, a1, b1, VB_EDGE);
 		point b2 = { i, center - offset };
+		drawLine(buffer, a1, b1, VB_EDGE);
 		drawLine(buffer, a2, b2, VB_EDGE);
 		a1 = b1;
 		a2 = b2;
@@ -233,9 +240,9 @@ double circleArea(double radius, int samplesNum)
 
 void rasterizeFunction(vbuffer& buffer, double a, double b, double maxCoord)
 {
-	double scaleFactor = VB_SIZE / maxCoord;
+	double scaleFactor = VB_SIZE / maxCoord;//масштаб
 	for (int i = 1; i < VB_SIZE; i++) {
-		double coord = VB_SIZE - (a + b * sin(i / scaleFactor)) * scaleFactor;
+		double coord = VB_SIZE - (a + b * sin(i / scaleFactor)) * scaleFactor;//значение функции по заданному х
 		point pa = { i, VB_SIZE - 2 };
 		point pb = { i, coord };
 		drawLine(buffer, pa, pb, VB_FILL);
@@ -329,9 +336,9 @@ int main()
 		rasterizeFunction(buffer, a, b, max);
 	}
 
-	printf("%.1f\n", max);
+	printf("%.1f\n", max);//подпись оси ординат
 	displayVideoBuffer(buffer);
-	printf(" %.1f\n", max);
+	printf(" %.1f\n", max);//подпись оси абсцисс
 
 	system("pause");
 }

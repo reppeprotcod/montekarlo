@@ -1,4 +1,4 @@
-#define _USE_MATH_DEFINES
+ï»¿#define _USE_MATH_DEFINES
 
 #include <algorithm>
 #include <iostream>
@@ -60,8 +60,8 @@ void initVideoBuffer(vbuffer& buffer)
 	buffer = new pixel * [VB_SIZE];
 	for (int i = 0; i < VB_SIZE; i++) {
 		buffer[i] = new pixel[VB_SIZE];
-		pixel value = (i == VB_SIZE - 1) ? '-' : VB_VOID;// âûáîð ñèìâîëà äëÿ çàïîëíåíèÿ ñòðîêè
-		memset(buffer[i], value, VB_SIZE * sizeof(pixel));//çàïîëíåíèÿ ñòðîêè
+		pixel value = (i == VB_SIZE - 1) ? '-' : VB_VOID;// Ð²Ñ‹Ð±Ð¾Ñ€ ÑÐ¸Ð¼Ð²Ð¾Ð»Ð° Ð´Ð»Ñ Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ ÑÑ‚Ñ€Ð¾ÐºÐ¸
+		memset(buffer[i], value, VB_SIZE * sizeof(pixel));//Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ ÑÑ‚Ñ€Ð¾ÐºÐ¸
 		setPixel(buffer, 0, i, '|');
 	}
 	setPixel(buffer, 0, 0, '^');
@@ -74,14 +74,14 @@ void displayVideoBuffer(const vbuffer& buffer)
 	for (int y = 0; y < VB_SIZE; y++) {
 		for (int x = 0; x < VB_SIZE; x++) {
 			putchar(buffer[y][x]);
-			if (x > 0 && x < VB_SIZE - 1)//äóáëèðâîàíèå ñèìâîëà äëÿ èçîáðàæåíèÿ â êîíñîëè,
-				putchar(buffer[y][x]);  // êðîìå ïåðâîãî è ïîñëåäíåãî ñòîëáöà 
+			if (x > 0 && x < VB_SIZE - 1)//Ð´ÑƒÐ±Ð»Ð¸Ñ€Ð²Ð¾Ð°Ð½Ð¸Ðµ ÑÐ¸Ð¼Ð²Ð¾Ð»Ð° Ð´Ð»Ñ Ð¸Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ Ð² ÐºÐ¾Ð½ÑÐ¾Ð»Ð¸,
+				putchar(buffer[y][x]);  // ÐºÑ€Ð¾Ð¼Ðµ Ð¿ÐµÑ€Ð²Ð¾Ð³Ð¾ Ð¸ Ð¿Ð¾ÑÐ»ÐµÐ´Ð½ÐµÐ³Ð¾ ÑÑ‚Ð¾Ð»Ð±Ñ†Ð° 
 		}
 		if (y != VB_SIZE - 1) putchar('\n');
 	}
 }
 
-//ðèñîâàíèå ëèíèè ïî àëãîðèòìó Áðåçåíõåìà
+//Ñ€Ð¸ÑÐ¾Ð²Ð°Ð½Ð¸Ðµ Ð»Ð¸Ð½Ð¸Ð¸ Ð¿Ð¾ Ð°Ð»Ð³Ð¾Ñ€Ð¸Ñ‚Ð¼Ñƒ Ð‘Ñ€ÐµÐ·ÐµÐ½Ñ…ÐµÐ¼Ð°
 void drawLine(vbuffer& buffer, point a, point b, pixel value) {
 	int dx = abs(b.x - a.x);
 	int sx = a.x < b.x ? 1 : -1;
@@ -100,27 +100,27 @@ void drawLine(vbuffer& buffer, point a, point b, pixel value) {
 	}
 }
 
-//çàïîëíåíèå ôèãóðû
+//Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ðµ Ñ„Ð¸Ð³ÑƒÑ€Ñ‹
 void rasterFill(vbuffer& buffer)
 {
 	rasterState state = rasterState::SEARCH;
 	for (int y = 0; y < VB_SIZE - 1; y++) {
-		for (int x = 0;;) {//çàïîëíåíèå ïðîèçâîäèòñÿ ïîñòðî÷íî
-			if (state == rasterState::SEARCH) {//ñòàäèÿ ïîèñêà ëåâîé ãðàíèöû
+		for (int x = 0;;) {//Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ðµ Ð¿Ñ€Ð¾Ð¸Ð·Ð²Ð¾Ð´Ð¸Ñ‚ÑÑ Ð¿Ð¾ÑÑ‚Ñ€Ð¾Ñ‡Ð½Ð¾
+			if (state == rasterState::SEARCH) {//ÑÑ‚Ð°Ð´Ð¸Ñ Ð¿Ð¾Ð¸ÑÐºÐ° Ð»ÐµÐ²Ð¾Ð¹ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ñ‹
 				if (getPixel(buffer, x, y) == VB_EDGE &&
 					getPixel(buffer, x + 1, y) != VB_EDGE)
-					state = rasterState::FILL;//ïåðåõîä íà ñòàäèþ çàïîëíåíèÿ
+					state = rasterState::FILL;//Ð¿ÐµÑ€ÐµÑ…Ð¾Ð´ Ð½Ð° ÑÑ‚Ð°Ð´Ð¸ÑŽ Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ
 				if (++x == VB_SIZE - 1) break;
 			}
-			else if (state == rasterState::FILL) {//ñòàäèÿ çàïîëíåíèÿ
+			else if (state == rasterState::FILL) {//ÑÑ‚Ð°Ð´Ð¸Ñ Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ
 				if (getPixel(buffer, x, y) == VB_EDGE)
-					state = rasterState::END;//çàâåðøåíèå çàïîëíåíèÿ
-				else setPixel(buffer, x, y, VB_FILL);//çàïîëíåíèå
-				if (++x == VB_SIZE) state = rasterState::CLEAN;//ïåðåõîä íà ñòàäèþ î÷èñòêè
+					state = rasterState::END;//Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸Ðµ Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ
+				else setPixel(buffer, x, y, VB_FILL);//Ð·Ð°Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ðµ
+				if (++x == VB_SIZE) state = rasterState::CLEAN;//Ð¿ÐµÑ€ÐµÑ…Ð¾Ð´ Ð½Ð° ÑÑ‚Ð°Ð´Ð¸ÑŽ Ð¾Ñ‡Ð¸ÑÑ‚ÐºÐ¸
 			}
 			else if (state == rasterState::CLEAN) {
 				if (getPixel(buffer, x, y) == VB_EDGE) break;
-				setPixel(buffer, x, y, VB_VOID);//î÷èñòêà
+				setPixel(buffer, x, y, VB_VOID);//Ð¾Ñ‡Ð¸ÑÑ‚ÐºÐ°
 				x--;
 			}
 			else if (state == rasterState::END) break;
@@ -131,7 +131,7 @@ void rasterFill(vbuffer& buffer)
 
 void rasterizePolygon(vbuffer& buffer, const polygon& poly)
 {
-	//îòðèñîâêà ãðàíèö ìíîãîóãîëüíèêà
+	//Ð¾Ñ‚Ñ€Ð¸ÑÐ¾Ð²ÐºÐ° Ð³Ñ€Ð°Ð½Ð¸Ñ† Ð¼Ð½Ð¾Ð³Ð¾ÑƒÐ³Ð¾Ð»ÑŒÐ½Ð¸ÐºÐ°
 	for (int i = 0, j = poly.size() - 1; i < poly.size(); j = i++) {
 		point a = { floor(poly[j].x), floor(VB_SIZE - poly[j].y) };
 		point b = { floor(poly[i].x), floor(VB_SIZE - poly[i].y) };
@@ -153,19 +153,19 @@ polygon randomPolygon(double maxCoord, int vertexNum)
 {
 	polygon poly;
 
-	//ïàðàìåòðû îêðóæíîñòè
+	//Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹ Ð¾ÐºÑ€ÑƒÐ¶Ð½Ð¾ÑÑ‚Ð¸
 	double x0 = maxCoord / 2;
 	double y0 = maxCoord / 2;
 	double radius = x0;
 
-	double a0 = 0.75 * (2 * M_PI / vertexNum);//ìèíèìàëüíîå îòêëîíåíèå óãëà
-	double a1 = 1.15 * (2 * M_PI / vertexNum);//ìàêñèìàëüíîå îòêëîíåíèå óãëà
-	double startAngle = random(-M_PI / 2, M_PI / 2);//íà÷àëüíûé óãîë
+	double a0 = 0.75 * (2 * M_PI / vertexNum);//Ð¼Ð¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ð¾Ðµ Ð¾Ñ‚ÐºÐ»Ð¾Ð½ÐµÐ½Ð¸Ðµ ÑƒÐ³Ð»Ð°
+	double a1 = 1.15 * (2 * M_PI / vertexNum);//Ð¼Ð°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ð¾Ðµ Ð¾Ñ‚ÐºÐ»Ð¾Ð½ÐµÐ½Ð¸Ðµ ÑƒÐ³Ð»Ð°
+	double startAngle = random(-M_PI / 2, M_PI / 2);//Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ñ‹Ð¹ ÑƒÐ³Ð¾Ð»
 
-	int N = 0;//êîëè÷åñâòî ïîñòðîåííûõ âåðøèí
-	double angle = startAngle;//òåêóùèé óãîë
+	int N = 0;//ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÐ²Ñ‚Ð¾ Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ñ‹Ñ… Ð²ÐµÑ€ÑˆÐ¸Ð½
+	double angle = startAngle;//Ñ‚ÐµÐºÑƒÑ‰Ð¸Ð¹ ÑƒÐ³Ð¾Ð»
 	while (angle < M_PI * 2 + startAngle) {
-		poly.push_back({//âû÷èñëåíèå êîîðäèíàò âåðøèíû
+		poly.push_back({//Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½Ð¸Ðµ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚ Ð²ÐµÑ€ÑˆÐ¸Ð½Ñ‹
 			x0 + radius * cos(angle),
 			y0 + radius * sin(angle)
 			});
@@ -176,7 +176,7 @@ polygon randomPolygon(double maxCoord, int vertexNum)
 	return poly;
 }
 
-//áûñòðûé àëãîðèòì ïðîâåðêè ïðèíàäëåæíîñòè âåðøèíû ìíîãîóãîëüíèêó
+//Ð±Ñ‹ÑÑ‚Ñ€Ñ‹Ð¹ Ð°Ð»Ð³Ð¾Ñ€Ð¸Ñ‚Ð¼ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸ Ð¿Ñ€Ð¸Ð½Ð°Ð´Ð»ÐµÐ¶Ð½Ð¾ÑÑ‚Ð¸ Ð²ÐµÑ€ÑˆÐ¸Ð½Ñ‹ Ð¼Ð½Ð¾Ð³Ð¾ÑƒÐ³Ð¾Ð»ÑŒÐ½Ð¸ÐºÑƒ
 bool insidePolygon(const polygon& p, const vertex& v)
 {
 	bool c = false;
@@ -191,10 +191,10 @@ bool insidePolygon(const polygon& p, const vertex& v)
 double polygonArea(const polygon& poly, double maxCoord, int samplesNum)
 {
 	double totalArea = pow(maxCoord, 2);
-	int k = 0;//êîëè÷åñâòî ïîïàäàíèé âíóòðü ìíîãîóãîëüíèêà
+	int k = 0;//ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÐ²Ñ‚Ð¾ Ð¿Ð¾Ð¿Ð°Ð´Ð°Ð½Ð¸Ð¹ Ð²Ð½ÑƒÑ‚Ñ€ÑŒ Ð¼Ð½Ð¾Ð³Ð¾ÑƒÐ³Ð¾Ð»ÑŒÐ½Ð¸ÐºÐ°
 
 	for (int i = 0; i < samplesNum; i++) {
-		vertex sample = { random(0, maxCoord), random(0, maxCoord) };//ñëó÷àéíàÿ òî÷êà
+		vertex sample = { random(0, maxCoord), random(0, maxCoord) };//ÑÐ»ÑƒÑ‡Ð°Ð¹Ð½Ð°Ñ Ñ‚Ð¾Ñ‡ÐºÐ°
 		if (insidePolygon(poly, sample)) k++;
 	}
 
@@ -204,12 +204,12 @@ double polygonArea(const polygon& poly, double maxCoord, int samplesNum)
 void rasterizeCircle(vbuffer& buffer, double radius)
 {
 	double center = VB_SIZE - radius;
-	//íà÷àëüíûå òî÷êè ëèíèé ãðàíèö îêðóæíîñòè
+	//Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ñ‹Ðµ Ñ‚Ð¾Ñ‡ÐºÐ¸ Ð»Ð¸Ð½Ð¸Ð¹ Ð³Ñ€Ð°Ð½Ð¸Ñ† Ð¾ÐºÑ€ÑƒÐ¶Ð½Ð¾ÑÑ‚Ð¸
 	point a1 = { 0, center };
 	point a2 = { 0, center };
 	for (int i = 1; i <= radius * 2; i++) {
 		double offset = sqrt(pow(radius, 2) - pow(i - radius, 2));
-		//êîíå÷íûå òî÷êè ëèíèé ãðàíèö îêðóæíîñòè
+		//ÐºÐ¾Ð½ÐµÑ‡Ð½Ñ‹Ðµ Ñ‚Ð¾Ñ‡ÐºÐ¸ Ð»Ð¸Ð½Ð¸Ð¹ Ð³Ñ€Ð°Ð½Ð¸Ñ† Ð¾ÐºÑ€ÑƒÐ¶Ð½Ð¾ÑÑ‚Ð¸
 		point b1 = { i, center + offset };
 		point b2 = { i, center - offset };
 		drawLine(buffer, a1, b1, VB_EDGE);
@@ -240,9 +240,9 @@ double circleArea(double radius, int samplesNum)
 
 void rasterizeFunction(vbuffer& buffer, double a, double b, double maxCoord)
 {
-	double scaleFactor = VB_SIZE / maxCoord;//ìàñøòàá
+	double scaleFactor = VB_SIZE / maxCoord;//Ð¼Ð°ÑÑˆÑ‚Ð°Ð±
 	for (int i = 1; i < VB_SIZE; i++) {
-		double coord = VB_SIZE - (a + b * sin(i / scaleFactor)) * scaleFactor;//çíà÷åíèå ôóíêöèè ïî çàäàííîìó õ
+		double coord = VB_SIZE - (a + b * sin(i / scaleFactor)) * scaleFactor;//Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸ Ð¿Ð¾ Ð·Ð°Ð´Ð°Ð½Ð½Ð¾Ð¼Ñƒ Ñ…
 		point pa = { i, VB_SIZE - 2 };
 		point pb = { i, coord };
 		drawLine(buffer, pa, pb, VB_FILL);
@@ -336,9 +336,9 @@ int main()
 		rasterizeFunction(buffer, a, b, max);
 	}
 
-	printf("%.1f\n", max);//ïîäïèñü îñè îðäèíàò
+	printf("%.1f\n", max);//Ð¿Ð¾Ð´Ð¿Ð¸ÑÑŒ Ð¾ÑÐ¸ Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚
 	displayVideoBuffer(buffer);
-	printf(" %.1f\n", max);//ïîäïèñü îñè àáñöèññ
+	printf(" %.1f\n", max);//Ð¿Ð¾Ð´Ð¿Ð¸ÑÑŒ Ð¾ÑÐ¸ Ð°Ð±ÑÑ†Ð¸ÑÑ
 
 	system("pause");
 }
